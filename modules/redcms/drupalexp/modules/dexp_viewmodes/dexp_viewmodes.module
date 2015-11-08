@@ -1,0 +1,49 @@
+<?php
+
+/**
+* Implements hook_entity_info_alter().
+*/
+function dexp_viewmodes_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes']['large_image'] = array(
+    'label' => t('Blog Large Image'),
+    'custom settings' => TRUE,
+  );
+  $entity_info['node']['view modes']['time_line'] = array(
+    'label' => t('Blog Timeline'),
+    'custom settings' => TRUE,
+  );
+  $entity_info['node']['view modes']['slider'] = array(
+    'label' => t('Blog Slider'),
+    'custom settings' => TRUE,
+  );
+  $entity_info['node']['view modes']['index_blog'] = array(
+    'label' => t('Index Blog'),
+    'custom settings' => TRUE,
+  );
+  
+}
+
+/**
+* Implements hook_preprocess_node().
+*/
+function dexp_viewmodes_preprocess_node(&$vars) {
+  if($vars['view_mode'] == 'large_image') {
+    $vars['theme_hook_suggestions'][] = 'node__' . $vars['type'] . '__large_image';
+  }
+  if($vars['view_mode'] == 'time_line') {
+    $vars['theme_hook_suggestions'][] = 'node__' . $vars['type'] . '__time_line';
+  }
+  if($vars['view_mode'] == 'slider') {
+    $vars['theme_hook_suggestions'][] = 'node__' . $vars['type'] . '__slider';
+  }
+  if($vars['view_mode'] == 'index_blog') {
+    $vars['theme_hook_suggestions'][] = 'node__' . $vars['type'] . '__index_blog';
+  }
+} 
+
+function dexp_viewmodes_page_alter(&$page) {
+  if (current_path() == 'blog' && theme_get_setting('blog_style', 'evolve') == 'timeline') {
+    unset($page['right_sidebar']);
+  }
+}
+

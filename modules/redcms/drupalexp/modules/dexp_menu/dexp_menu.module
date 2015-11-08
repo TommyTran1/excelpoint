@@ -1,0 +1,125 @@
+<?php
+/*
+** Implement hook_block_info
+*/
+function dexp_menu_block_info(){
+	$blocks['dexp_menu_block'] = array(
+		'info' => t('Dexp Dropdown Menu'),
+		'cache' => DRUPAL_NO_CACHE,
+	);
+	return $blocks;
+}
+
+/*
+** Implement hook_block_configure
+*/
+function dexp_menu_block_configure($delta = ''){
+	switch ($delta) {
+		case 'dexp_menu_block':
+			$form['dexp_menu_menu'] = array(
+				'#type' => 'select',
+				'#title' => t('Menu'),
+				'#description' => t('The menu you want to be displayed using Dexp dropdown'),
+				'#required' => true,
+				'#default_value' => variable_get('dexp_menu_menu', 'main-menu:0'),
+				'#options' => menu_parent_options(menu_get_menus(), array('mlid' => 0,'plid'=>0)),
+			);
+			return $form;
+			break;
+	}
+}
+
+/*
+** Implement hook_block_save.
+*/
+function dexp_menu_block_save($delta = '', $edit = array()) {
+	switch ($delta){
+		case 'dexp_menu_block':
+			variable_set('dexp_menu_menu', $edit['dexp_menu_menu']);
+			break;
+	}
+}
+
+/*
+** Implement hook_block_view
+*/
+function dexp_menu_block_view($delta){
+	switch ($delta) {
+		case 'dexp_menu_block':
+			return _dexp_menu_block();
+			break;
+		default:
+			return array('subject'=>'','content'=>'');
+		}
+}
+
+/*
+**Implements hook_theme()
+*/
+function dexp_menu_theme(&$vars){
+	$module_path = drupal_get_path('module', 'dexp_menu');
+	$base = array(
+		'path' => "{$module_path}/theme",
+	);
+	return array(
+		'dexp_menu' => $base + array(
+			'template' => 'dropdown',
+			'variables' => array('items'=>NULL),
+		)
+	);
+}
+
+/*
+**Helper function to call theme.
+*/
+function _dexp_menu_block(){
+	drupal_add_css(drupal_get_path('module','dexp_menu').'/css/dexp-dropdown.css');
+  drupal_add_js(drupal_get_path('module','dexp_menu').'/js/dexp-dropdown.js');
+  $items = array();
+	$menu = explode(':',variable_get('dexp_menu_menu', 'main-menu:0'));
+	$tree = menu_tree_all_data($menu[0]);
+	$menu_tree = _dexp_menu_submenu_tree_all_data($tree, $menu[1]);
+	$menu_tree = menu_tree_output($menu_tree);
+	$items['menu'] = render($menu_tree);
+	$block = array(
+		'subject' => '',
+		'content' => theme('dexp_menu', array('items'=>$items)),
+	);
+	return $block; 
+}
+
+function _dexp_menu_submenu_tree_all_data($tree, $plid=0) {
+	if($plid == 0) return $tree;
+	$ret = array();
+	foreach ($tree as $branch){
+		if ($branch['link']['mlid'] == $plid){
+			$ret = $branch['below'];
+			return $ret;
+			break;
+		}elseif(is_array($branch['below'])){
+			$ret = _dexp_menu_submenu_tree_all_data($branch['below'],$plid);
+			if(!empty($ret)) return $ret;
+		}
+	}
+	return $ret;
+}
+
+function dexp_menu_form_menu_edit_item_alter(&$form, &$form_state){
+	if (isset($form['mlid']['#value'])) {
+		$options = unserialize(db_query('SELECT options FROM {menu_links} WHERE mlid = :mlid', array(':mlid' => $form['mlid']['#value']))->fetchField());
+	}
+  if(!isset($options['link_icon'])){
+		$options['link_icon'] = '';
+	}
+	$form['options']['link_icon'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Link icon'),
+		'#default_value' => $options['link_icon'],
+	);
+}
+
+function dexp_menu_menu_link_alter(&$item){
+	if(isset($item['link_icon'])){
+		$item['options']['link_icon'] = $item['link_icon'];
+	}
+}

@@ -1,0 +1,1 @@
+<?php print views_embed_view($view_name,$block_id); ?>

@@ -1,0 +1,60 @@
+/**
+ * This was copied from twitter bootstrap's mixins.less and given a slight
+ * modification to make it a parametric mixin to hide from CSS output.
+ * 
+ * Look at these locations for more information:
+ *   http://lesscss.org/#-parametric-mixins
+ */
+/**
+ * The following variables defined in less_demo.info:
+ *   @gradient_start
+ *   @gradient_end
+ *   @text_glow
+ */
+#less_demo_gradient {
+  *zoom: 1;
+  background-color: #055a8e;
+  background-image: -moz-linear-gradient(top, #0779bf 0%, #055a8e 100%);
+  background-image: -ms-linear-gradient(top, #0779bf 0%, #055a8e 100%);
+  background-image: -o-linear-gradient(top, #0779bf 0%, #055a8e 100%);
+  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #0779bf), color-stop(1, #055a8e));
+  background-image: -webkit-linear-gradient(top, #0779bf 0%, #055a8e 100%);
+  background-image: linear-gradient(top, #0779bf 0%, #055a8e 100%);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 80px;
+  text-shadow: 0 0 0 transparent, 0 0 10px #0000ff;
+  text-align: center;
+}
+#less_demo_gradient:before,
+#less_demo_gradient:after {
+  display: table;
+  content: "";
+  line-height: 0;
+}
+#less_demo_gradient:after {
+  clear: both;
+}
+#less_demo_gradient a {
+  color: #008000;
+}
+#less_demo_gradient .less_demo_logo {
+  background: transparent url(/sites/all/modules/less/less_demo/images/logo.png) center center no-repeat;
+  height: 200px;
+}
+@media only screen and (max-width: 960px) {
+  #less_demo_gradient .less_demo_logo {
+    float: left;
+    width: 199px;
+  }
+}
+@media only screen and (max-width: 960px) {
+  #less_demo_gradient p {
+    float: left;
+  }
+}
+#less_demo_gradient .less_demo_logo:after {
+  display: block;
+  content: token("Site name from token in .less file: [site:name]");
+  font-size: 20px;
+}
+/*# sourceMappingURL=data:application/json,%7B%22version%22%3A3%2C%22sources%22%3A%5B%22%5C%2Fsites%5C%2Fall%5C%2Fmodules%5C%2Fless%5C%2Fless_demo%5C%2Fstyles%5C%2Fless_demo.info.css.less%22%2C%22%5C%2Fsites%5C%2Fall%5C%2Fmodules%5C%2Fless%5C%2Fless_demo%5C%2Fimports%5C%2Fless_demo.clearfix.css.less%22%2C%22%5C%2Fsites%5C%2Fall%5C%2Fmodules%5C%2Fless%5C%2Fless_demo%5C%2Fimports%5C%2Fless_demo.imported.css.less%22%5D%2C%22names%22%3A%5B%5D%2C%22mappings%22%3A%22%3B%3B%3B%3B%3B%3B%3B%3B%3B%3B%3B%3B%3BAAAmG%3BECYjG%2CQAAA%3BECVA%2CyBAAA%3BEACA%2CkBAAkB%2CmDAAlB%3BEACA%2CkBAAkB%2CkDAAlB%3BEACA%2CkBAAkB%2CiDAAlB%3BEACA%2CkBAAkB%2CgDAAgD%2CwBAA8B%2CuBAAhG%3BEACA%2CkBAAkB%2CsDAAlB%3BEACA%2CkBAAkB%2C8CAAlB%3BEFRiG%2CyCAAA%3BEAAA%3BEAAA%2CgDAAA%3BEAAA%3B%3BACajG%2CmBAAC%3BAACD%2CmBAAC%3BEACC%3BEACA%2CSAAS%2CEAAT%3BEAGA%3B%3BAAEF%2CmBAAC%3BEACC%3B%3BADtB%2BF%2CmBAAA%3BEAAA%2CcAAA%3B%3BAAAA%2CmBAAA%3BEAAA%2CuEAAA%3BEAAA%3B%3BAAAA%2CwBAAA%3BEAAA%2CmBAAA%3BIAAA%3BIAAA%3B%3B%3BAAAA%2CwBAAA%3BEAAA%2CmBAAA%3BIAAA%3B%3B%3BAAAA%2CmBAAA%2CgBAAA%3BEAAA%3BEAAA%2CSAAA%2CMAAA%2CkDAAA%3BEAAA%22%7D */

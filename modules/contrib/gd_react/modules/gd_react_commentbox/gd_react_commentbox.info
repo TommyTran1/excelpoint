@@ -1,0 +1,13 @@
+name = GD React.js - CommentBox components.
+description = Sub-module for react.js comment box components.
+core = 7.x
+package = GD
+
+
+dependencies[] = gd_react
+
+files[] = includes/plugins/react_component/ReactComponentCommentBox.class.php
+; Information added by drush on 2015-02-18
+version = "7.x-1.x-dev"
+project = "gd_react"
+datestamp = "1424298041"

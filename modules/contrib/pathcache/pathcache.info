@@ -1,0 +1,11 @@
+name = Path Cache
+description = Perform path caching for better URL alias performance.
+dependencies[] = path
+package = Caching
+core = 7.x
+; Information added by Drupal.org packaging script on 2014-11-07
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "pathcache"
+datestamp = "1415384604"
+

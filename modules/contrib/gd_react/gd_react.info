@@ -1,0 +1,13 @@
+name = GD React.js
+description = Set of sub-module for react.js components.
+core = 7.x
+package = GD
+
+dependencies[] = ctools
+dependencies[] = entity
+
+files[] = includes/plugins/react_component/ReactComponentBase.class.php
+; Information added by drush on 2015-02-18
+version = "7.x-1.x-dev"
+project = "gd_react"
+datestamp = "1424298041"

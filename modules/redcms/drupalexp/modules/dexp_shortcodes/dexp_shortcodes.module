@@ -1,0 +1,70 @@
+<?php
+module_load_include('inc','dexp_shortcodes','includes/box');
+module_load_include('inc','dexp_shortcodes','includes/animate');
+module_load_include('inc','dexp_shortcodes','includes/button');
+module_load_include('inc','dexp_shortcodes','includes/skillbar');
+module_load_include('inc','dexp_shortcodes','includes/piegraph');
+module_load_include('inc','dexp_shortcodes','includes/carousel');
+module_load_include('inc','dexp_shortcodes','includes/title');
+module_load_include('inc','dexp_shortcodes','includes/embeded');
+module_load_include('inc','dexp_shortcodes','includes/stats');
+module_load_include('inc','dexp_shortcodes','includes/accordion');
+module_load_include('inc','dexp_shortcodes','includes/icon');
+module_load_include('inc','dexp_shortcodes','includes/flipbox');
+module_load_include('inc','dexp_shortcodes','includes/tab');
+module_load_include('inc','dexp_shortcodes','includes/column');
+
+/**
+* Implements hook_wysiwyg_editor_settings_alter().
+*/
+function dexp_shortcodes_wysiwyg_editor_settings_alter(&$settings, $context) {
+  if ($context['profile']->editor == 'ckeditor') {
+    $settings['allowedContent'] = TRUE;
+  }
+}
+
+/**
+* Implementation of hook_shortcode_info().
+*/
+function dexp_shortcodes_shortcode_info() {
+ $shortcodes = array();
+ dexp_shortcodes_box_shortcode_info($shortcodes);
+ dexp_shortcodes_animate_shortcode_info($shortcodes);
+ dexp_shortcodes_button_shortcode_info($shortcodes);
+ dexp_shortcodes_skillbar_shortcode_info($shortcodes);
+ dexp_shortcodes_piegraph_shortcode_info($shortcodes);
+ dexp_shortcodes_carousels_shortcode_info($shortcodes);
+ dexp_shortcodes_carousel_shortcode_info($shortcodes);
+ dexp_shortcodes_title_shortcode_info($shortcodes);
+ dexp_shortcodes_embeded_shortcode_info($shortcodes);
+ dexp_shortcodes_stats_shortcode_info($shortcodes);
+ dexp_shortcodes_accordions_shortcode_info($shortcodes);
+ dexp_shortcodes_accordion_shortcode_info($shortcodes);
+ dexp_shortcodes_icon_shortcode_info($shortcodes);
+ dexp_shortcodes_flipbox_shortcode_info($shortcodes);
+ dexp_shortcodes_tabs_shortcode_info($shortcodes);
+ dexp_shortcodes_tab_shortcode_info($shortcodes);
+ dexp_shortcodes_column_shortcode_info($shortcodes);
+ return $shortcodes;
+}
+
+/**
+ * Implement hook_theme().
+ */
+function dexp_shortcodes_theme(){
+  $themes = array();
+  dexp_shortcodes_box_theme($themes);
+  dexp_shortcodes_button_theme($themes);
+  dexp_shortcodes_skillbar_theme($themes);
+  dexp_shortcodes_piegraph_theme($themes);
+  dexp_shortcodes_carousels_theme($themes);
+  dexp_shortcodes_carousel_theme($themes);
+  dexp_shortcodes_title_theme($themes);
+  dexp_shortcodes_embeded_theme($themes);
+  dexp_shortcodes_stats_theme($themes);
+  dexp_shortcodes_accordions_theme($themes);
+  dexp_shortcodes_accordion_theme($themes);
+  dexp_shortcodes_icon_theme($themes);
+  dexp_shortcodes_flipbox_theme($themes);
+  return $themes;
+}

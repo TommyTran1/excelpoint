@@ -1,0 +1,66 @@
+#block-dexp-quicksettings-dexp-quicksettings{
+  h3.block-title{
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 48px;
+    text-align: center;
+  }
+  background: #FFF;
+  position: fixed;
+  left: -207px;
+  .transition(left);
+  top: 96px;
+  z-index: 999;
+  box-shadow:0 0 3px 0 rgba(0, 0, 0, 0.08);
+  &.open{
+    left:0;
+  }
+  .content{
+    padding: 2px 18px 10px;
+    width: 205px;
+  }
+  h3{
+    color: #848688;
+    font-size: 13px;
+    margin: 5px 0 -5px 1px;
+    line-height: 30px;
+  }
+  select.form-select{
+    border-radius: 2px;
+    color: #848688;
+    cursor: pointer;
+    font-size: 13px;
+    margin: 2px 0 10px 2px;
+    padding: 5px;
+    width: 164px;
+  }
+  ul.presets,ul.dexp_background{
+    margin: 0;
+    padding: 0;
+    li{
+      float: left;
+      margin:4px 2px 0;
+      span{
+        cursor: pointer;
+        width: 20px; height: 20px; display: block;
+        border-radius: 2px;
+      }
+    }
+  }
+  .quicksettings_toggle{
+    box-shadow:0 0 3px 0 rgba(0, 0, 0, 0.08);
+    background: url("../images/switcher.gif") no-repeat scroll 10px center #FFFFFF;
+    border-color: #EEEEEE;
+    border-radius: 0 2px 2px 0;
+    border-style: solid;
+    border-width: 1px 1px 1px 0;
+    display: block;
+    height: 44px;
+    position: absolute;
+    right: -44px;
+    text-indent: -9999px;
+    top: 0px;
+    width: 44px;
+    cursor: pointer;
+  }
+}

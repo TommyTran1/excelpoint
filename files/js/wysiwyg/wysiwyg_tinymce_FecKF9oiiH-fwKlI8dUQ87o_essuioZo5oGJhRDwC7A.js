@@ -1,0 +1,1 @@
+window.tinyMCEPreInit = {"base":"\/sites\/excelpoint2.dev.drupalhcm.com\/libraries\/tinymce\/jscripts\/tiny_mce","suffix":"","query":""};

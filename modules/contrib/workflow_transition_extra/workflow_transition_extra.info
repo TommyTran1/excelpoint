@@ -1,0 +1,8 @@
+name = Workflow Transition Extra
+description = This field add extra transition config to workflow
+core = 7.x
+
+dependencies[] = workflow
+dependencies[] = entity
+
+files[] = views/handler/workflow_transition_handler_filter_user_can_change_workflow.inc

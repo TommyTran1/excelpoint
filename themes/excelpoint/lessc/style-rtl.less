@@ -1,0 +1,52 @@
+body.rtl{
+
+/*List style in RTL 
+============================================*/
+.list-1 li:after, .list-2 li:after, .list-3 li:after, .list-4 li:after {
+    content: "";
+    font-family: "FontAwesome";
+    margin: 0 0 0 8px;
+    position: relative;
+    color: #5F8CB4;
+}
+.list-1 li:after {
+    content: "";
+}
+.list-2 li:after {
+    content: "\f105";
+}
+.list-3 li:after {
+    content: "";
+}
+.list-4 li:after {
+    content: "";
+}
+/*Accordion*/
+.panel-group{
+&.default .panel-heading a.collapsed{
+        background: url("../images/accordion-toggle.png") no-repeat 0 0 #fff;
+}
+
+ &.default .panel-heading a{
+        background: url("../images/accordion-toggle.png") no-repeat 0 100% @base_color;
+    }
+}
+.headline{
+    padding-right: 0;
+}
+.brd-headling{
+    float: right;
+}
+.skill-bar .bar-wrap strong{
+    left: 0;
+    right: auto;
+}
+.node-testimonial .description i.fa{
+    right: 9px;
+    left: auto;
+}
+.alert .close{
+    float: left;
+}
+/*End*/
+}

@@ -1,0 +1,10 @@
+<?php
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function gd_react_commentbox_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'gd_react') {
+    return "includes/plugins/$plugin_type";
+  }
+}

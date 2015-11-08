@@ -1,0 +1,6 @@
+name = Dexp Block Animation
+description = "Providers animation effect when blocks appears."
+core = 7.x
+package = DrupalExp
+
+dependencies[] = libraries

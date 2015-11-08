@@ -1,0 +1,364 @@
+<?php
+
+/**
+ * Implement hook_menu().
+ */
+function dexp_animation_menu() {
+  $items = array();
+  $items['admin/drupalexp/dexp_animation'] = array(
+      'title' => t('Animation settings'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('dexp_animation_admin_settings'),
+      'access arguments' => array('administer onthisdate settings'),
+      'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+function dexp_animation_admin_settings() {
+  $form['dexp_animation_pages_init_action'] = array(
+      '#type' => 'radios',
+      '#title' => t('Enable animate on specific pages '),
+      '#options' => array(
+          'page_enable' => t('Load only on the listed pages.'),
+          'page_disable' => t('Load on every page except the listed pages.')
+      ),
+      '#default_value' => variable_get('dexp_animation_pages_init_action', 'page_disable'),
+  );
+  $form['dexp_animation_pages_list'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Pages'),
+      '#description' => t('List one page per line as Drupal paths.  The * character is a wildcard.  Example paths are "node/add/page" and "node/add/*".  Use <front> to match the front page.'),
+      '#default_value' => variable_get('dexp_animation_pages_list','')
+  );
+  $form['dexp_animation_mobile'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Disable animate on mobile'),
+      '#default_value' => variable_get('dexp_animation_mobile', 0),
+  );
+  return system_settings_form($form);
+}
+
+/*
+ * Implement hook_init().
+ */
+
+function dexp_animation_init() {
+  if (dexp_animation_exclude_these_paths() != 1) {
+    $module_path = drupal_get_path('module', 'dexp_animation');
+    $library = libraries_get_libraries();
+    if (isset($library['appear'])) {
+      $path = $library['appear'];
+      drupal_add_js($path . '/jquery.appear.js');
+      drupal_add_js($module_path . '/js/dexp_animation.js');
+      drupal_add_css($module_path . '/css/animate.css');
+    }
+  }
+	$js_settings = array(
+			'dexp_animation' => array(
+					'disable_mobile' => (bool)variable_get('dexp_animation_mobile', 0),
+			)
+	);
+	drupal_add_js($js_settings,'setting');
+}
+
+/**
+ * Return TRUE if current path is disabled for animate
+ */
+function dexp_animation_exclude_these_paths() {
+  $action = variable_get('dexp_animation_pages_init_action', 'page_disable');
+  $page_list = variable_get('dexp_animation_pages_list', '');
+
+  if (!empty($page_list)) {
+    // Retrieve Drupal alias for the current path (if exists).
+    $alias = drupal_get_path_alias($_GET['q']);
+
+    if (drupal_match_path($_GET['q'], $page_list) || drupal_match_path($alias, $page_list)) {
+      return ($action == 'page_disable' ? 1 : 0);
+    }
+  }
+
+  return ($action == 'page_disable' ? 0 : 1);
+}
+
+/*
+ * Implement hook_form_alter()
+ */
+
+function dexp_animation_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'block_admin_configure' || $form_id == 'block_add_block_form') {
+    $form['dexp_block_settings'] = array(
+        '#type' => 'fieldset',
+        '#title' => 'DrupalExp Block Settings',
+        '#weight' => 0,
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+    );
+    $form['dexp_block_settings']['dexp_animation'] = array(
+        '#type' => 'fieldset',
+        '#title' => 'Block Animation',
+        '#weight' => 0,
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+    );
+    $form['dexp_block_settings']['dexp_animation']['dexp_animate'] = array(
+        '#type' => 'select',
+        '#title' => t('Appears animate'),
+        '#options' => _dexp_animation_animations(),
+        '#default_value' => _dexp_animation_variable_get($form['module']['#value'], $form['delta']['#value'], 'dexp_animate'),
+    );
+    $form['dexp_block_settings']['dexp_animation']['dexp_block_background_image'] = array(
+        '#tree' => TRUE,
+        '#title' => t('Background image'),
+        '#type' => 'media',
+        '#description' => t('The uploaded image will be displayed on the page unless it is marked as "removed".'),
+        '#default_value' => _dexp_animation_variable_get($form['module']['#value'], $form['delta']['#value'], 'dexp_block_background_image'),
+        '#media_options' => array(
+            'global' => array(
+                'types' => array(
+                    'image' => 'image',
+                ),
+                'schemes' => array(
+                    'public' => 'public',
+                ),
+                'file_extensions' => 'png gif jpg jpeg',
+                'max_filesize' => '1 MB',
+                'uri_scheme' => 'public',
+            ),
+        ),
+    );
+    $form['dexp_block_settings']['dexp_animation']['dexp_block_background_image_type'] = array(
+        '#type' => 'select',
+        '#title' => t('Background image type'),
+        '#options' => array('default' => 'Default', 'parallax' => 'Parallax'),
+        '#default_value' => _dexp_animation_variable_get($form['module']['#value'], $form['delta']['#value'], 'dexp_block_background_image_type'),
+    );
+    $form['dexp_block_settings']['dexp_custom_style'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Block Custom Style'),
+        '#weight' => 1,
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+    );
+    $form['dexp_block_settings']['dexp_custom_style']['dexp_block_text_align'] = array(
+        '#type' => 'select',
+        '#title' => t('Text align'),
+        '#options' => array('default' => 'Default', 'left' => 'Left', 'center' => 'Center', 'right' => 'Right'),
+        '#default_value' => _dexp_animation_variable_get($form['module']['#value'], $form['delta']['#value'], 'dexp_block_text_align'),
+    );
+    $form['dexp_block_settings']['dexp_custom_style']['dexp_block_padding'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Padding'),
+        '#default_value' => _dexp_animation_variable_get($form['module']['#value'], $form['delta']['#value'], 'dexp_block_padding'),
+    );
+    $form['dexp_block_settings']['dexp_custom_style']['dexp_block_margin'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Margin'),
+        '#default_value' => _dexp_animation_variable_get($form['module']['#value'], $form['delta']['#value'], 'dexp_block_margin'),
+    );
+    $form['dexp_block_settings']['dexp_custom_style']['dexp_block_content_class'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Custom block content class'),
+        '#default_value' => _dexp_animation_variable_get($form['module']['#value'], $form['delta']['#value'], 'dexp_block_content_class'),
+    );
+    $form['dexp_block_settings']['dexp_responsive_settings'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Block Responsive Settings'),
+        '#weight' => 2,
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+    );
+    $form['dexp_block_settings']['dexp_responsive_settings']['dexp_block_responsive'] = array(
+        '#type' => 'checkboxes',
+        '#title' => 'Responsive settings',
+        '#options' => array(
+            'hphone' => 'Hidden on Phone',
+            'vphone' => 'Visible on Phone',
+            'htablet' => 'Hidden on Tablet',
+            'vtablet' => 'Visible on Tablet',
+            'hdesktop' => 'Hidden on Desktop',
+            'vdesktop' => 'Visible on Desktop'
+        ),
+        '#default_value' => (_dexp_animation_variable_get($form['module']['#value'], $form['delta']['#value'], 'dexp_block_responsive')) ? _dexp_animation_variable_get($form['module']['#value'], $form['delta']['#value'], 'dexp_block_responsive') : array(),
+    );
+    $form['#submit'][] = 'dexp_animation_block_configure_form_submit';
+  }
+}
+
+function dexp_animation_block_configure_form_submit($form, $form_state) {
+  $values = $form_state['values'];
+  if ($values['dexp_animate']) {
+    _dexp_animation_variable_set($values['module'], $values['delta'], 'dexp_animate', $values['dexp_animate']);
+  } else {
+    _dexp_animation_variable_set($values['module'], $values['delta'], 'dexp_animate', NULL);
+  }
+  if ($values['dexp_block_background_image']) {
+    _dexp_animation_variable_set($values['module'], $values['delta'], 'dexp_block_background_image', $values['dexp_block_background_image']);
+  } else {
+    _dexp_animation_variable_set($values['module'], $values['delta'], 'dexp_block_background_image', NULL);
+  }
+  if ($values['dexp_block_background_image_type']) {
+    _dexp_animation_variable_set($values['module'], $values['delta'], 'dexp_block_background_image_type', $values['dexp_block_background_image_type']);
+  } else {
+    _dexp_animation_variable_set($values['module'], $values['delta'], 'dexp_block_background_image_type', NULL);
+  }
+  if ($values['dexp_block_text_align']) {
+    _dexp_animation_variable_set($values['module'], $values['delta'], 'dexp_block_text_align', $values['dexp_block_text_align']);
+  } else {
+    _dexp_animation_variable_set($values['module'], $values['delta'], 'dexp_block_text_align', NULL);
+  }
+  if ($values['dexp_block_padding']) {
+    _dexp_animation_variable_set($values['module'], $values['delta'], 'dexp_block_padding', $values['dexp_block_padding']);
+  } else {
+    _dexp_animation_variable_set($values['module'], $values['delta'], 'dexp_block_padding', NULL);
+  }
+  if ($values['dexp_block_margin']) {
+    _dexp_animation_variable_set($values['module'], $values['delta'], 'dexp_block_margin', $values['dexp_block_margin']);
+  } else {
+    _dexp_animation_variable_set($values['module'], $values['delta'], 'dexp_block_margin', NULL);
+  }
+  if ($values['dexp_block_content_class']) {
+    _dexp_animation_variable_set($values['module'], $values['delta'], 'dexp_block_content_class', $values['dexp_block_content_class']);
+  } else {
+    _dexp_animation_variable_set($values['module'], $values['delta'], 'dexp_block_content_class', NULL);
+  }
+  if ($values['dexp_block_responsive']) {
+    _dexp_animation_variable_set($values['module'], $values['delta'], 'dexp_block_responsive', $values['dexp_block_responsive']);
+  } else {
+    _dexp_animation_variable_set($values['module'], $values['delta'], 'dexp_block_responsive', NULL);
+  }
+}
+
+function dexp_animation_preprocess_block(&$vars) {
+  $vars['content_attributes_array']['class'][] = 'content';
+  $block = $vars['elements']['#block'];
+  $module = $block->module;
+  $delta = $block->delta;
+  $animate = _dexp_animation_variable_get($module, $delta, 'dexp_animate');
+  $background_image = _dexp_animation_variable_get($module, $delta, 'dexp_block_background_image');
+  $background_image_type = _dexp_animation_variable_get($module, $delta, 'dexp_block_background_image_type');
+  $text_align = _dexp_animation_variable_get($module, $delta, 'dexp_block_text_align');
+  $padding = _dexp_animation_variable_get($module, $delta, 'dexp_block_padding');
+  $margin = _dexp_animation_variable_get($module, $delta, 'dexp_block_margin');
+  $content_class = _dexp_animation_variable_get($module, $delta, 'dexp_block_content_class');
+  if (!empty($content_class)) {
+    $vars['content_attributes_array']['class'][] = $content_class;
+  }
+  $responsive = _dexp_animation_variable_get($module, $delta, 'dexp_block_responsive');
+  if ($animate != NULL) {
+    $library = libraries_get_libraries();
+    if (isset($library['appear'])) {
+      $path = $library['appear'];
+      drupal_add_js($path . '/jquery.appear.js');
+      drupal_add_js(drupal_get_path('module', 'dexp_animation') . '/js/dexp_animation.js');
+      drupal_add_css(drupal_get_path('module', 'dexp_animation') . '/css/animate.css');
+    }
+    $vars['classes_array'][] = 'dexp-animate';
+    $vars['attributes_array']['data-animate'] = $animate;
+  }
+  if (!empty($responsive)) {
+    //foreach($responsive as $device){
+    if ($responsive['hphone']) {
+      $vars['classes_array'][] = 'hidden-xs';
+    }
+    if ($responsive['vphone']) {
+      $vars['classes_array'][] = 'visible-xs';
+    }
+    if ($responsive['htablet']) {
+      $vars['classes_array'][] = 'hidden-sm';
+    }
+    if ($responsive['vtablet']) {
+      $vars['classes_array'][] = 'visible-sm';
+    }
+    if ($responsive['hdesktop']) {
+      $vars['classes_array'][] = 'hidden-md';
+      $vars['classes_array'][] = 'hidden-lg';
+    }
+    if ($responsive['vdesktop']) {
+      $vars['classes_array'][] = 'visible-md';
+      $vars['classes_array'][] = 'visible-lg';
+    }
+    //}
+  }
+  $styles = array();
+  if (!empty($text_align) && $text_align != 'default') {
+    $styles[] = 'text-align:' . $text_align;
+  }
+  if ($padding) {
+    $styles[] = 'padding:' . $padding;
+  }
+  if ($margin) {
+    $styles[] = 'padding:' . $margin;
+  }
+  if (isset($background_image['fid']) && $background_image['fid']) {
+    $file = file_load($background_image['fid']);
+    $url = file_create_url($file->uri);
+    $styles[] = "background-image:url({$url}); background-position:center top;";
+    if ($background_image_type == 'parallax') {
+      $vars['classes_array'][] = 'dexp-parallax';
+      $library = libraries_get_libraries();
+      if (isset($library['stellar'])) {
+        $path = $library['stellar'];
+        drupal_add_js($path . '/jquery.stellar.min.js');
+        drupal_add_js(drupal_get_path('module', 'dexp_animation') . '/js/iscroll.js');
+        drupal_add_js(drupal_get_path('module', 'dexp_animation') . '/js/dexp_animation_parallax.js');
+      }
+      $vars['attributes_array']['data-stellar-background-ratio'] = '0.5';
+      //$vars['content_attributes_array']['class'][] = 'container';
+    }
+  }
+  if (!empty($styles)) {
+    $vars['attributes_array']['style'] = implode(";", $styles);
+  }
+}
+
+function _dexp_animation_variable_set($module, $delta, $name, $value) {
+  variable_set($module . $delta . $name, $value);
+}
+
+function _dexp_animation_variable_get($module, $delta, $name) {
+  return variable_get($module . $delta . $name, NULL);
+}
+
+function _dexp_animation_animations() {
+  return array(
+      '' => 'None',
+      'flash' => 'flash',
+      'shake' => 'shake',
+      'bounce' => 'bounce',
+      'tada' => 'tada',
+      'swing' => 'swing',
+      'wobble' => 'wobble',
+      'pulse' => 'pulse',
+      'flip' => 'flip',
+      'flipInX' => 'flipInX',
+      'flipInY' => 'flipInY',
+      'fadeIn' => 'fadeIn',
+      'fadeInUp' => 'fadeInUp',
+      'fadeInDown' => 'fadeInDown',
+      'fadeInLeft' => 'fadeInLeft',
+      'fadeInRight' => 'fadeInRight',
+      'fadeInUpBig' => 'fadeInUpBig',
+      'fadeInDownBig' => 'fadeInDownBig',
+      'fadeInLeftBig' => 'fadeInLeftBig',
+      'fadeInRightBig' => 'fadeInRightBig',
+      'slideInDown' => 'slideInDown',
+      'slideInLeft' => 'slideInLeft',
+      'slideInRight' => 'slideInRight',
+      'bounceIn' => 'bounceIn',
+      'bounceInUp' => 'bounceInUp',
+      'bounceInDown' => 'bounceInDown',
+      'bounceInLeft' => 'bounceInLeft',
+      'bounceInRight' => 'bounceInRight',
+      'rotateIn' => 'rotateIn',
+      'rotateInUpLeft' => 'rotateInUpLeft',
+      'rotateInDownLeft' => 'rotateInDownLeft',
+      'rotateInUpRight' => 'rotateInUpRight',
+      'rotateInDownRight' => 'rotateInDownRight',
+      'lightSpeedIn' => 'lightSpeedIn',
+      'lightSpeedLeft' => 'lightSpeedLeft',
+      'lightSpeedRight' => 'lightSpeedRight',
+      'hinge' => 'hinge',
+      'rollIn' => 'rollIn',
+  );
+}

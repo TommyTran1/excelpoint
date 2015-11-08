@@ -1,0 +1,110 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function workflow_transition_extra_menu() {
+  $items['admin/config/workflow/workflow/manage/%/transitions_extra'] = array(
+    'title'            => 'Transitions extra',
+    'access arguments' => ['administer workflow'],
+    'file'             => 'workflow_transition_extra.pages.php',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('workflow_transition_extra_form', 5),
+    'type'             => MENU_LOCAL_TASK,
+    'weight'           => 12,
+  );
+
+  return $items;
+}
+
+/**
+ * Get transition workable fields
+ *
+ * @return array
+ */
+function workflow_transition_extra_get_workable_fields() {
+  $wf_fields = workflow_transition_extra_get_fields('workflow');
+  $entity_ref_fields = workflow_transition_extra_get_fields('entityreference');
+  $map_wf_fields = array();
+  $map_entity_ref_fields = array();
+  $result = array();
+
+  foreach ($wf_fields as $wf_field) {
+    foreach ($wf_field['bundles'] as $entity_type => $bundles) {
+      foreach ($bundles as $bundle) {
+        $map_wf_fields["$entity_type:$bundle"][$wf_field['field_name']] = $wf_field;
+      }
+    }
+  }
+
+  foreach ($entity_ref_fields as $entity_ref_field) {
+    foreach ($entity_ref_field['bundles'] as $entity_type => $bundles) {
+      foreach ($bundles as $bundle) {
+        $map_entity_ref_fields["$entity_type:$bundle"][$entity_ref_field['field_name']] = $entity_ref_field;
+      }
+    }
+  }
+
+  foreach ($map_wf_fields as $key => $map_wf_field) {
+    if (isset($map_entity_ref_fields[$key])) {
+      $result[$key] = $map_entity_ref_fields[$key];
+    }
+  }
+
+  return $result;
+}
+
+/**
+ * Get fields by type.
+ *
+ * @param  string $type Field type
+ * @return array  Fields with provided type.
+ */
+function workflow_transition_extra_get_fields($type) {
+  $fields = field_info_field_map();
+  $workflow_fields = array();
+  foreach ($fields as $name => $field) {
+    if ($field['type'] == $type) {
+      $workflow_fields[$name] = field_info_field($name);
+    }
+  }
+
+  return $workflow_fields;
+}
+
+/**
+ * Implements hook_workflow().
+ *
+ * Compare current user with users in entity-reference field value and decide
+ * allow/deny to change state.
+ */
+function workflow_transition_extra_workflow($op, $id, $new_sid, $entity, $force, $entity_type = '', $field_name = '', $transition = NULL, $user = NULL) {
+  switch ($op) {
+    case 'transition permitted':
+      $match_config = FALSE;
+      $workflow = $transition->getWorkflow();
+      $wrap = entity_metadata_wrapper($entity_type, $entity);
+      foreach ($workflow->options['transitions_extra'] as $key => $fieldName) {
+        if (("$id:$new_sid" === $key) && $fieldName) {
+          if ($allowed_user = $wrap->{$fieldName}->value()) {
+            $match_config = TRUE;
+            if ($user->uid === $allowed_user->uid) {
+              return TRUE;
+            }
+          }
+        }
+      }
+
+      return $match_config ? FALSE : TRUE;
+  }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function workflow_transition_extra_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'workflow_transition_extra') . '/views'
+  );
+}

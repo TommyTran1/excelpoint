@@ -1,0 +1,259 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function gd_react_menu() {
+  $items['js/react/get/%/%'] = array(
+    'title' => 'React-get',
+    'page callback' => 'gd_react_get_callback',
+    'access callback' => TRUE,
+    'page arguments' => array(3, 4),
+  );
+  $items['js/react/post/%/%'] = array(
+    'title' => 'React-post',
+    'page callback' => 'gd_react_post_callback',
+    'access callback' => TRUE,
+    'page arguments' => array(3, 4),
+  );
+  return $items;
+}
+
+/**
+ * Load the ctools plugin type 'react_component'.
+ *
+ * @param string $type
+ *   The type of the 'react_component' ctools plugin to load.
+ *
+ * @return boolean|array
+ *   The plugin or FALSE.
+ */
+function gd_react_component_plugin_load($type) {
+  $plugin_type = gd_react_component_plugins($type);
+  if (!is_array($plugin_type)) {
+    return FALSE;
+  }
+  $plugin_type['name'] = $type;
+  return $plugin_type;
+}
+
+/**
+ * Menu callback for react_component plugins.
+ *
+ * @param array $plugin_type
+ *   The ctools plugin 'react_component' type loaded.
+ *
+ * @param string $component_id
+ *   The ID of the component to look for.
+ */
+function gd_react_get_callback($component_id, $route) {
+  $datas = array();
+
+  // We rely on cache to validate and not expose in DOM
+  // the options set in theme('react_components').
+  $cache_component = cache_get($component_id, 'cache_react_components');
+
+  if (is_object($cache_component)) {
+    $options = $cache_component->data;
+    $plugin_type = gd_react_component_plugin_load($options['plugin-name']);
+    // Instantiate the class plugins.
+    $reflector = new ReflectionClass($plugin_type['class']);
+    $react_component = $reflector->newInstance($options);
+    // Get the plugins processed options.
+    $options = $react_component->getOptions();
+
+    $cache_data_key = $react_component->getComponentID() . ':' . $route;
+
+    if ($options['buffer']) {
+      $cached_datas = cache_get($cache_data_key, 'cache_react_components_datas');
+
+      if (is_object($cached_datas) && $cached_datas->created + $options['buffer'] >= REQUEST_TIME) {
+        $datas = $cached_datas->data;
+        $cached_datas = TRUE;
+      }
+      else {
+        $cached_datas = FALSE;
+      }
+    }
+    // If no buffer, or no valid cache (expired or new).
+    if (!isset($options['buffer']) || !$options['buffer'] || !$cached_datas) {
+      // Execute the plugin query:
+      $react_component->get($route);
+      // Get formatted datas to return with json_encode.
+      $datas = gd_react_component_datas($route, $react_component);
+
+      // If a buffer is specified set the cache
+      if ($options['buffer']) {
+        cache_set($cache_data_key, $datas, 'cache_react_components_datas', CACHE_TEMPORARY);
+      }
+    }
+  }
+  else {
+    // The cache component hasn't been found in the cache.
+    // An outdated or invalid Component ID hasbeen tried.
+    return MENU_NOT_FOUND;
+  }
+
+  if (ob_get_level()) {
+    ob_end_clean();
+  }
+
+  // Output in json.
+  drupal_json_output($datas);
+  drupal_exit();
+}
+
+/**
+ * Callback used by the react form.
+ *
+ * @param array $plugin_type
+ *
+ * @param string $component_id
+ * @return string
+ */
+function gd_react_post_callback($component_id, $route) {
+  // We rely on cache to validate and not expose in DOM
+  // the options set in theme('react_components').
+  $cache_component = cache_get($component_id, 'cache_react_components');
+
+  if (is_object($cache_component)) {
+    $options = $cache_component->data;
+    $plugin_type = gd_react_component_plugin_load($options['plugin-name']);
+    // Instantiate the class plugins.
+    $reflector = new ReflectionClass($plugin_type['class']);
+    $react_component = $reflector->newInstance($options);
+    // Get the plugins processed options.
+    $options = $react_component->getOptions();
+
+    $form = new stdClass();
+    $form->values = $_POST;
+    $react_component->post($route, $form);
+  }
+  else {
+    return MENU_NOT_FOUND;
+  }
+}
+
+/**
+ * Return the datas formatted for the javascript react components.
+ *
+ * @param ReactComponentBase $react_component
+ *   The ReactComponent Plugin.
+ *
+ * @return array
+ *   The datas.
+ */
+function gd_react_component_datas($route, ReactComponentBase $react_component) {
+  $datas = array();
+  if (!empty($react_component->key)) {
+    $datas = module_invoke_all($react_component->pluginType['name'] . '_datas_' . $react_component->key, $route, $react_component);
+  }
+  if (empty($datas)) {
+    $datas = $react_component->defaultDatas($route);
+  }
+
+  drupal_alter('gd_react_component_datas_alter', $route, $datas, $react_component);
+
+  return $datas;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function gd_react_theme() {
+  return array(
+    'react_component' => array(
+      'variables' => array(
+        'type' => NULL,
+        'options' => NULL,
+        'expose_private_options' => FALSE,
+      ),
+    ),
+  );
+}
+
+/**
+ * Theme callback for 'react_component'.
+ */
+function theme_react_component($variables) {
+  $type = $variables['type'];
+  $options = $variables['options'];
+  // Load ctools plugin type 'react_component'.
+  $plugin_type = gd_react_component_plugin_load($type);
+  if ($plugin_type == FALSE) {
+    watchdog('gd_react', "Bad components type: %type when called : theme('react_component').", array('%type' => $type), WATCHDOG_ERROR);
+    return '';
+  }
+
+  // Instantiate ReactComponent Plugin class.
+  $reflector = new ReflectionClass($plugin_type['class']);
+  $react_component = $reflector->newInstance($options);
+  $options = $react_component->getOptions();
+
+  // Set the persistent cache options for this componentID.
+  cache_set($react_component->getComponentID(), $options, 'cache_react_components', variable_get('gd_react_cache_components_lifetime', 21600));
+
+  $output = '';
+  // Let the plugin render the component.
+  $output .= $react_component->theme($variables);
+
+  return $output;
+}
+
+/**
+ * Get the available type plugins.
+ */
+function gd_react_component_plugins($type = NULL) {
+  ctools_include('plugins');
+  $plugins = ctools_get_plugins('gd_react', 'react_component');
+  foreach ($plugins as $key => $plugin) {
+    if (!class_exists($plugin['class'])) {
+      // Invalid class specified.
+      unset($plugins[$key]);
+      continue;
+    }
+  }
+  if (!empty($plugins[$type])) {
+    return $plugins[$type];
+  }
+  else if (!empty($type)) {
+    return FALSE;
+  }
+  uasort($plugins, 'ctools_plugin_sort');
+  return $plugins;
+}
+
+/**
+ * Implements hook_ctools_plugin_type().
+ */
+function gd_react_ctools_plugin_type() {
+  return array(
+    'react_component' => array(
+      'use hooks' => FALSE,
+      'classes' => array('class'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function gd_react_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'gd_react') {
+    return 'includes/plugins/' . $plugin;
+  }
+}
+
+/**
+ * Implementation of hook_flush_caches().
+ *
+ * This tells Drupal's cache handling system the name of our caching
+ * table, so expired items will be purged automatically and this table
+ * also affected by the empty all caches function.
+ */
+function gd_react_flush_caches() {
+  return array(
+    'cache_react_components',
+    'cache_react_components_datas'
+  );
+}
